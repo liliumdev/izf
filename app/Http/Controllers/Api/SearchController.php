@@ -14,43 +14,30 @@ class SearchController extends Controller
     {
         $query = $request->input('query');
 
-        $questionRankingRules = function (Indexes $meilisearch, $query, $options) {
-            $meilisearch->updateSearchableAttributes(['title', 'content']);
+        $meilisearchConfigFn = function ($attributes) {
+            return function (Indexes $meilisearch, $query, $options) use ($attributes) {
+                $meilisearch->updateSearchableAttributes($attributes);
 
-            $meilisearch->updateRankingRules([
-                'typo',
-                'words',
-                'proximity',
-                'attribute',
-                'exactness',
-                'sort',
-            ]);
+                $meilisearch->updateRankingRules([
+                    'typo',
+                    'words',
+                    'proximity',
+                    'attribute',
+                    'exactness',
+                    'sort',
+                ]);
 
-            return $meilisearch->search($query, $options);
+                return $meilisearch->search($query, $options);
+            };
         };
 
-        $questions = Question::search($query, $questionRankingRules)
+        $questions = Question::search($query, $meilisearchConfigFn(['title', 'content']))
             ->where('is_public', true)
             ->when($request->category_id, fn ($query) => $query->where('category_id', $request->category_id))
             ->take(20)
             ->get();
 
-        $answerRankingRules = function (Indexes $meilisearch, $query, $options) {
-            $meilisearch->updateSearchableAttributes(['content']);
-
-            $meilisearch->updateRankingRules([
-                'typo',
-                'words',
-                'proximity',
-                'attribute',
-                'exactness',
-                'sort',
-            ]);
-
-            return $meilisearch->search($query, $options);
-        };
-
-        $answers = Answer::search($query, $answerRankingRules)
+        $answers = Answer::search($query, $meilisearchConfigFn(['content']))
             ->where('state', 'published')
             ->take(20)
             ->get();
