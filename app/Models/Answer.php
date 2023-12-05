@@ -43,7 +43,7 @@ class Answer extends Model
     {
         return [
             'content' => $this->content,
-            'state' => $this->state->name,
+            'state' => $this->state->getValue(),
         ];
     }
 
