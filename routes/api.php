@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TagController;
@@ -37,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('categories', CategoryController::class)->only(['update', 'store', 'destroy']);
     Route::apiResource('questions', QuestionController::class)->only(['update']);
     Route::apiResource('tags', TagController::class)->only(['store', 'destroy']);
+    Route::apiResource('users', UserController::class)->only(['index']);
 });
 
 // Non-authenticated users can view categories, list and create questions, and list all tags

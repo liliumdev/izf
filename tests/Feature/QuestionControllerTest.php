@@ -16,6 +16,54 @@ class QuestionControllerTest extends TestCase
     use WithUsers;
 
     /** @test */
+    public function it_can_list_questions(): void
+    {
+        $question = Question::factory()->create();
+
+        $this->getJson(route('questions.index'))
+            ->assertSuccessful()
+            ->assertJsonFragment(['title' => $question->title]);
+    }
+
+    /** @test */
+    public function it_can_list_questions_filtered_by_their_answer_state(): void
+    {
+        $questionWithPublishedAnswer = Question::factory()->create();
+
+        $questionWithPublishedAnswer->answers()->create([
+            'content' => 'Ovo je odgovor na pitanje.',
+            'state' => 'published',
+            'user_id' => $this->moderatorUser->id,
+        ]);
+
+        $questionWithDraftAnswer = Question::factory()->create();
+
+        $questionWithDraftAnswer->answers()->create([
+            'content' => 'Ovo je odgovor na pitanje.',
+            'state' => 'draft',
+            'user_id' => $this->moderatorUser->id,
+        ]);
+
+        // Only question with draft answer returned
+        $this->getJson(route('questions.index', ['state' => 'draft']))
+            ->assertSuccessful()
+            ->assertJsonFragment(['title' => $questionWithDraftAnswer->title])
+            ->assertJsonMissing(['title' => $questionWithPublishedAnswer->title]);
+
+        // Only question with published answer returned
+        $this->getJson(route('questions.index', ['state' => 'published']))
+            ->assertSuccessful()
+            ->assertJsonFragment(['title' => $questionWithPublishedAnswer->title])
+            ->assertJsonMissing(['title' => $questionWithDraftAnswer->title]);
+
+        // No state filter applied, both questions returned
+        $this->getJson(route('questions.index'))
+            ->assertSuccessful()
+            ->assertJsonFragment(['title' => $questionWithPublishedAnswer->title])
+            ->assertJsonFragment(['title' => $questionWithDraftAnswer->title]);
+    }
+
+    /** @test */
     public function it_can_create_question(): void
     {
         $questionData = [

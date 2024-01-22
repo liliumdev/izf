@@ -7,12 +7,19 @@ use App\Models\Question;
 use Illuminate\Http\Response;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\QuestionRequest;
+use App\Http\Requests\QuestionIndexRequest;
 
 class QuestionController extends Controller
 {
-    public function index()
+    public function index(QuestionIndexRequest $request)
     {
-        $questions = Question::with('tags')->paginate(10);
+        $questions = Question::with('tags')
+            ->when($request->has('state'), function ($query) use ($request): void {
+                $query->whereHas('answers', function ($query) use ($request): void {
+                    $query->where('state', $request->get('state'));
+                });
+            })
+            ->paginate(10);
 
         return response()->json($questions);
     }
